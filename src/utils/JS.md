@@ -475,6 +475,7 @@
   + 查找特定项的索引的方法: indexOf() 和 lastIndexOf()
   + 迭代方法: every()、some()、filter()、map() 和 forEach()
   + 数组归并方法 reduce() 和 reduceRight() 方法
+
   ##### 什么是 DOM 和 BOM？
 
   **Dom：**指的是文档对象模型，它指的是把文档当做一个对象，这个对象主要定义了处理网页内容的方法和接口。
@@ -584,7 +585,7 @@
   **特点：**
     + 静态分析：依赖关系在编译时确定，支持 Tree Shaking。
     + 实时绑定：导出的是值的引用，模块内修改会同步到所有导入方。
-    + 浏览器原生支持：通过 <script type="module"> 直接使用。
+    + 浏览器原生支持：通过 ```<script type="module"> ```直接使用。
 
   ```js
     // 导出
@@ -596,6 +597,73 @@
     import * as math from './math.js';
   ```
 
+
+#### 异步编程
+
+  ##### 对Promise的理解
+
+  Promise是异步编程的一种解决方案，它是一个构造函数，接收一个函数作为参数，返回一个 Promise 实例。他的出现大大改善了异步编程的困境，避免了地狱回调。一个 Promise 实例有三种状态，分别是pending、resolved 和 rejected，分别代表了进行中、已成功和已失败。实例的状态只能由 pending 转变 resolved 或者rejected 状态，并且状态一经改变，就凝固了，无法再被改变了。
+
+  其中状态的改变是通过 resolve() 和 reject() 函数来实现的，可以在异步操作结束后调用这两个函数改变 Promise 实例的状态，它的原型上定义了一个 then 方法，使用这个 then 方法可以为两个状态的改变注册回调函数。这个回调函数属于微任务，会在本轮事件循环的末尾执行。
+
+  **需要注意的是：** 在构造 Promise 的时候，构造函数内部的代码是立即执行的，then后的回调函数才是异步任务。
+
+  ##### Promise的基本用法
+  **常规的做法**
+  + 构造函数--> new Promise --> 内部代码执行后需要根据其执行结果进行resolve或者reject
+  + 后续通过 then --> 接收resolve出来的数据进行异步操作
+  + 或者通过 catch --> 进行错误的获取
+  + 或者是通过 finally --> 不过成功还是失败 --> 进行最后的回调
+
+  **其他用法：**
+  + ```Promise.all([promise1,promise2,promise3])```，all方法可以完成并行任务， 它接收一个数组，数组的每一项都是一个promise对象。当数组中所有的promise的状态都达到resolved的时候，all方法的状态就会变成resolved，如果有一个状态变成了rejected，那么all方法的状态就会变成rejected。
+
+  + Promise.race()方法和all一样，接受的参数是一个每项都是promise的数组，但是与all不同的是，当最先执行完的事件执行完之后，就直接返回该promise对象的值。如果第一个promise对象状态变成resolved，那自身的状态变成了resolved；反之第一个promise变成rejected，那自身状态就会变成rejected
+
+
+  ##### 对 async / await 的理解
+
+  ```async/await``` 其实是 **Generator** 的语法糖，它是为优化then链而开发出来的。从字面上来看，async 是“异步”的简写，await则为等待，所以很好理解 async 用于申明一个 function 是异步的，并且返回了一个Promise对象，函数内如果有return值，则相当于```Promise.resolve(...)```，而 await 用于等待一个异步方法或者说一个表达式执行完成，await 规定只能在 async 函数内执行。
+
+  总的来说，```async/await```最终都是返回一个Promise对象，所以其用法跟Promise有点像，但是优化了then的链式调用，让其代码看起来更加整洁和易懂。
+
+  ##### 异步编程的实现方式？
+
+  + 回调函数 的方式，使用回调函数的方式有一个缺点是，多个回调函数嵌套的时候会造成回调函数地狱，上下两层的回调函数间的代码耦合度太高，不利于代码的可维护。
+
+  + Promise 的方式，使用 Promise 的方式可以将嵌套的回调函数作为链式调用。但是使用这种方法，有时会造成多个 then 的链式调用，可能会造成代码的语义不够明确。
+
+  + generator 的方式，它可以在函数的执行过程中，将函数的执行权转移出去，在函数外部还可以将执行权转移回来。当遇到异步函数执行的时候，将函数执行权转移出去，当异步函数执行完毕时再将执行权给转移回来。因此在 generator 内部对于异步操作的方式，可以以同步的顺序来书写。使用这种方式需要考虑的问题是何时将函数的控制权转移回来，因此需要有一个自动执行 generator 的机制，比如说 co 模块等方式来实现 generator 的自动执行。
+
+  + async 函数 的方式，async 函数是 generator 和 promise 实现的一个自动执行的语法糖，它内部自带执行器，当函数内部执行到一个 await 语句的时候，如果语句返回一个 promise 对象，那么函数将会等待 promise 对象的状态变为 resolve 后再继续向下执行。因此可以将异步逻辑，转化为同步的顺序来书写，并且这个函数可以自动执行。
+
+  ##### setTimeout、Promise、Async/Await 的区别
+
+  可以从执行顺序来说明 --> 就是谈宏任务和微任务 --> 以及谈谈各自的特点，
+
+  setTimeout --> 存在delay --> delay完成后才会扔到宏任务队列中，不阻塞后续代码执行
+
+  Promise --> 是一个异步任务解决方案 --> 是一个构造函数，函数内会被立即执行，then和catch是后续的异步任务，是微任务，--> 也不会阻塞主线任务代码执行
+
+  Async/Await --> 也是一种异步解决方案,优化then的链式调用 --> 跟Promise有点像，存在Await关键字，时，会阻塞async内Await后的代码，并且跳出Async函数，继续执行其他同步代码。但需要注意的事：**Await的代码是会被立即执行的，Await后的代码才会被阻塞**
+  ```js
+  async function async1(){
+   console.log('async1 start');
+   // async2 是会被立即执行的，而 console.log('async1 end') 被当成异步任务，后续才会执行
+    await async2();
+    console.log('async1 end')
+  }
+  async function async2(){
+      console.log('async2')
+  }
+  console.log('script start');
+  async1();
+  console.log('script end')
+  // 输出顺序：script start->async1 start->async2->script end->async1 end
+  ```
+
+
+####
 
   
 
