@@ -152,5 +152,75 @@
     + 如果在运行时条件很少改变，则使用 v-if 较好
   
   ##### Vue 生命周期详解
+  
+  [![image.png](https://i.postimg.cc/9FWSm3Z5/image.png)](https://postimg.cc/rzPgjPfQ)
+
+  **需要注意的点是：** 
+
+  + 选项式和组合式两者用法上不一样，组合式API需要引入，再进行使用。
+
+  + ```beforeCreate``` 和 ```created``` 在Vue3中已经不存在，```setup``` 贯穿了这两个周期。
+  
+  + ```mounted``` ```beforeUpdate``` ```update``` ```activated``` deactivated等几个生命周期函数，变成了```onmounted``` ```onbeforeUpdate``` ```onupdate``` ```onactivated```
+
+  + ```beforeDestroy``` 和 ```destroyed``` 变成了 ```onbeforeUnmounted``` 和 ```onunmounted```
+
+  + Vue3 还添加了两个开发过程可使用的调式生命周期函数
+    + ```renderTracked``` :此钩子事件能够实现当组件渲染时，追踪到响应式依赖的调用。
+    + ```renderTriggered``` :此钩子事件告诉你是什么操作触发了重新渲染，以及该操作的目标对象和键。
+
+#### 如何理解 Vue 中的自定义指令
+
+
+#### Vue 的数据双向绑定(v-model)原理？
+
+核心点：
+  1. 理解什么是 Vue 中的双向绑定，带来的好处是什么？
+  2. 单向绑定和双向绑定的优缺点是什么？
+  3. 理解 Vue 中，对于 input、checkbox、radio、自定义组件的双向绑定实现细节
+  4. 能够回答出 v-model 和 sync 修饰符有什么区别
+
+  **单向绑定和双向绑定的优缺点是什么？**
+
+  + 单向绑定（One-Way Data Binding）
+    + 数据流清晰可预测（一般都是model -> View），组件间解耦，依赖关系明确，适合大型项目，也便于后期的维护和测试。也是复杂应用实施状态管理的前提。
+    + 因为是单向绑定，所以需要手动修改数据值，以保持数据的更新，开发效率不高。
+
+  + 双向绑定（Two-Way Data Binding）
+    + 适用于实时反应用户输入的场景，简化表单处理。适合小型项目或简单交互，强调开发效率（如后台管理等）。
+    + 数据流不透明，因为是双向绑定的，自动同步可能导致数据变更来源模糊，尤其在复杂组件层级中，调试难度增加。
+
+  **```v-model``` 和 ```.sync``` 修饰符的区别** 
+
+  + Vue2 中的使用
+    + ```v-model``` 为单个 prop 的双向绑定设计，是```:value="data" @input="data = $event.target.value"``` 的语法糖
+    + ```:value.sync``` 支持多个 props 的双向绑定，解决 v-model 只能绑定单个值的限制。主要是实现子组件与父组件的双向绑定是 
+    ```html
+    <!-- 父组件 -->
+    <ChildComponent :title.sync="pageTitle" :size.sync="pageSize" />
+
+    <!-- 等价于 -->
+    <ChildComponent 
+      :title="pageTitle" 
+      @update:title="pageTitle = $event"
+      :size="pageSize"
+      @update:size="pageSize = $event"
+    />
+    ```
+
+  + Vue3 中取消了 ```.sync```修饰符，因为 ```v-model``` 可支持多个Prop绑定，因此可以使用 v-bind 和 v-on 来手动实现类似的双向数据绑定效果
+  
+  ```html
+  <!-- 父组件 -->
+  <ChildComponent v-model:title="pageTitle" v-model:size="pageSize" />
+
+  <!-- 等价于 -->
+  <ChildComponent
+    :title="pageTitle"
+    @update:title="pageTitle = $event"
+    :size="pageSize"
+    @update:size="pageSize = $event"
+  />
+  ```
 
   

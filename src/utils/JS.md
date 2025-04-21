@@ -663,10 +663,66 @@
   ```
 
 
-####
+#### ESM 模块与 commonjs 模块方案有什么异同？
 
++ 语法：
+  + CommonJS 使用 require(<module-path>) 导入模块，并使用 module.exports 导出模块
+  + ES Module 使用 import 导入模块，并使用 export 导出模块
++ 加载机制
+  + CommonJS的加载机制是同步的，即：在加载和解析模块时，JavaScript 会停止代码的执行直到文件被加载完成。这对于服务器端的 Node.js 应用来说是可以接受的，因为文件都存储在本地硬盘，读取速度快。然而，对于运行在浏览器的代码，这将导致执行阻塞，降低性能。
+  + ESM 的加载机制是异步的，模块的导入、解析和执行是在解析阶段就已经完成的。这意味着浏览器可以并行请求多个模块，然后在所有模块都加载完毕后，再一起执行。这种方式非常适合浏览器环境，因为这样就不用因等待文件加载而阻塞代码执行，从而提高性能。
++ 顶层作用域以及运行环境：
+  + CommonJS在每个模块的顶层作用域中，有许多预定义的变量，如 __filename, __dirname, 和 NODE_PATH。而 ESM 没有这些变量。
+  + CommonJS 是 Node.js 所有版本都支持的模块系统，而 ESM 需要 Node.js v12 或更高版本，并且在浏览器中也有支持。
+  + 在 CommonJS 模块中，this 指向当前模块的 exports 对象；但是在 ESM 中，this 是 undefined。
++ 文件扩展名:
+  + Node.js 默认将.js和.ts当作CommonJS模块处理。
+  + CommonJS 使用 .cjs 扩展名编写 JavaScript，并使用 .cts 扩展名编写 TypeScript。
+  + ESM 使用 .mjs 扩展名编写 JavaScript，并使用 .mts 扩展名编写 TypeScript。
++ tree-shaking 支持
+  + CJS 不支持 tree-shaking：因为 cjs 需要运行起来之后，才知道有哪些依赖；
+  + ESM (ES Module) 可以支持 Tree Shaking，主要原因在于其静态的结构。在 ES Module 中，导入（import）和导出（export）语句在编译阶段就确定下来了，也就是说模块之间的依赖关系在这一阶段就已经明确了。这种特性使得构建工具如 Webpack 或 Rollup 可以轻松地在编译阶段检测出哪些代码被使用，哪些未被使用，从而实现所谓的 "dead code elimination"，删除未被使用的代码。
+
+  综上，ESM 方案在多数时候表现更好，性能更佳，安全性、稳定性更强，体现在：
   
+  1. 静态分析和优化：由于 ESM 的 import 和 export 声明均在编译阶段（而非执行阶段）解析，因此更适合于静态分析。例如，这使得诸如 Tree Shaking（在打包过程中删除未使用的代码）这样的优化变得可能。
+  2. 实时绑定：ESM 支持实时绑定：当导出项发生变化时，所有导入相应模块的地方都能获取到最新的值，这能确保模块值“唯一真实”，确保不会被错误更改；
+  3. 更好的安全性：在 ESM 中，导出的变量是只读的，外部不能修改。这意味着一旦模块的输出被导入，就不能被改变(除非原始模块中发生了变更)，有助于保护模块内部的逻辑不被外部修改。
+  5. 更好的兼容性：由于 ESM 是 ECMAScript 标准的一部分，因此在最新的浏览器和 Node.js 环境中都能得到良好支持。
+  6. 更有利于重构：基于 ESM 的静态特性，我们完全可以通过代码静态分析方式找到模块导入导出的具体使用情况，在下次重构时(例如文件重命名、导出结构变化)更容易找到所有关联改动点，做出变更。
 
+#### symbol 是什么？可用于做什么？
+
+```Symbol``` 是 ES6 引入的一种新的基础数据类型，```Symbol``` 的特点在于它是唯一的，即使我们创建了两个具有相同描述的 ```Symbol```，他们也是不同的，因此，```Symbol``` 的主要作用就是生成一个唯一的标识符。
+
+```js
+let symbol1 = Symbol();
+let symbol2 = Symbol('symbol');
+
+console.log(typeof symbol1); // "symbol"
+console.log(symbol1 === symbol2); // false，即使描述符相同，生成的Symbol还是唯一的
+```
+
+**Symbol 与元编程:**
+
+元编程就是程序能够对其自身进行操作的一种策略，ES6 引入了一些内置的 ```Symbol``` 值，用于实现元编程的。比如这里的 ```Symbol.iterator```，这是一个特殊的 ```Symbol```，被用于定义产生一个对象默认遍历器的接口
+
+```js
+let obj = {
+  [Symbol.iterator]: function* () {
+    yield 1;
+    yield 2;
+    yield 3;
+  }
+}
+
+for (let value of obj) {
+  console.log(value); // 分别输出 1, 2, 3
+}
+```
+
+
+#### 
 
 
 
