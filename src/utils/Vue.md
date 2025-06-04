@@ -38,12 +38,70 @@
 
   ##### vue-router有哪几种导航钩子
 
-  + **beforeEach:** 在每次路由跳转之前执行，可以用来进行用户身份验证、路由拦截等操作。
-  + **afterEach:** 在每次路由跳转之后执行，可以用来进行路由跳转后的操作，比如页面滚动、统计PV等操作。
-  + **beforeResolve:** 在导航被确认之前，同时在所有组件内守卫和异步路由组件被解析之后执行。
-  + **beforeRouteEnter:** 在进入路由之前执行，与全局beforeEach的区别是它可以针对某个具体路由进行设置。
-  + **beforeRouteUpdate:** 在路由更新时执行，比如路由参数发生变化时，可用于获取当前路径，匹配激活菜单。
-  + **beforeRouteLeave:** 在离开当前路由时执行，可以用来进行页面数据的保存或弹出提示等操作。
+  Vue Router 提供了多种导航钩子（导航守卫），用于在路由导航过程中进行控制和处理。
+
+  ###### 全局导航钩子
+  + **```beforeEach```:** 在导航触发时，全局前置守卫。常用于权限验证、登录检查等。
+  ```js
+  router.beforeEach((to, from, next) => {
+    // 必须调用 next() 继续导航
+  });
+  ```
+
+  + **```beforeResolve```:** 在导航被确认前，所有组件内守卫和异步路由组件解析后调用。适合处理需要确保数据就绪的场景。
+  ```js
+  router.beforeResolve((to, from, next) => {
+    next();
+  });
+  ```
+
+  + **```afterEach```:** 在每次路由跳转之后执行，可以用来进行路由跳转后的操作，比如页面滚动、统计PV等操作。
+  ```js
+  router.afterEach((to, from) => {}); // 无next()参数
+  ```
+
+  ###### 路由独享钩子
+  + **```beforeEnter```**
+  在路由配置中定义，仅对当前路由生效。优先级高于全局 beforeEach。
+  ```js
+  const routes = [
+    {
+      path: '/user',
+      component: User,
+      beforeEnter: (to, from, next) => {
+        next();
+      }
+    }
+  ];
+  ```
+  
+  ###### 组件内导航钩子
+  + **```beforeRouteEnter```:** 在进入路由之前执行，与全局beforeEach的区别是它可以针对某个具体路由进行设置。
+  ```js
+  beforeRouteEnter(to, from, next) {
+    next(vm => {
+      // 通过 vm 访问组件实例
+    });
+  }
+  ```
+
+  + **```beforeRouteUpdate```:** 在路由更新时执行，比如路由参数发生变化时，可用于获取当前路径，匹配激活菜单。
+  ```js
+  beforeRouteUpdate(to, from, next) {
+    this.data = fetchData(to.params.id); // 可访问 this
+    next();
+  }
+  ```
+
+  + **```beforeRouteLeave```:** 在离开当前路由时执行，可以用来进行页面数据的保存或弹出提示等操作。
+  ```js
+  beforeRouteLeave(to, from, next) {
+    if (this.hasUnsavedChanges) { // 可访问this
+      if (confirm('确定离开？')) next();
+      else next(false);
+    } else next();
+  }
+  ```
 
   ##### Vue-Router的原理
 
@@ -222,9 +280,482 @@
   />
   ```
 
-#### 
+#### vue nextTick 实现原理
 
+#### Vue 组件之间的通信方式有哪些？
+
+  **总的来说：** 组件通信常用方式有以下 10 种：
+  + **```props```**
+  + **```$emit/$on```**
+  + **```$children/$parent```**
+  + **```$attrs/$listeners```**
+  + **```ref```**
+  + **```$root```**
+  + **```provide + inject```**
+  + **```eventbus```**
+  + **```Vue2: vuex```**
+  + **```Vue3: Pinia```**
+
+  按分类来说的话：
+
+  + 父子组件
+    + ```props/$emit/$parent/ref/$attrs```
+  + 兄弟组件
+    + ```$parent/$root/eventbus/vuex/pinia```
+  + 跨层级关系
+    + ```eventbus/provide+inject/vuex/pinia```
+
+  **扩展：**
+
+  知道上述所有方式中，很多其实是已经在 Vue3 中被废弃或者不推荐使用
+  + 在 3.x 中，**```$children```** 属性已被删除并且不再受支持。 相反，如果您需要访问子组件实例，我们建议使用 template refs。
+  + **```$listeners```** 已经在 Vue3 中被废弃
+  + **```EventBus```** 不推荐使用：
+    当然，这里的不推荐使用并不是说 EventBus 完全不能使用，EventBus 的使用比较看场景，更适合在简单的场景下进行组件之间的通信。它允许任何组件在需要时发布事件，其他组件可以订阅这些事件并作出相应的响应。但是相对全局状态管理 Vuex 和 Pinia，
+
+  **Vue 中 $attrs 和 $listeners 的含义和适用场景是什么？**
+
+  + **```$attrs：```** 包含了父作用域中不被 prop 所识别 (且获取) 的特性绑定 ( class 和 style 除外 )。当一个组件没有声明任何 prop 时，这里会包含所有父作用域的绑定 ( class 和 style 除外 )，并且可以通过 v-bind="$attrs" 传入内部组件。通常配合 inheritAttrs 选项一起使用。
+  + **```$listeners：```**包含了父作用域中的 (不含 .native 修饰器的) v-on 事件监听器。它可以通过 v-on="$listeners" 传入内部组件
+  **最常见的使用场景在于多级组件嵌套需要传递数据时**
+  ```html
+  <!-- 父组件 -->
+  <template>
+    <div>
+      <child-dom :foo="foo" :bar="bar" @upFoo="update"></child-dom>
+    </div>
+  </template>
   
+  <script>
+  import ChildDom from "../components/attrs/ChildDom.vue";
+  export default {
+    components: {
+      ChildDom,
+    },
+    data() {
+      return {
+        foo: "foo",
+        bar: "bar",
+      };
+    },
+    methods: {
+      update(val) {
+        this.foo = val;
+        console.log("update success");
+      },
+    },
+  };
+  </script>
+
+
+  <!-- 子组件 -->
+  <template>
+    <div>
+      <p>foo:{{ foo }}</p>
+      <p>attrs: {{ $attrs }}</p>
+      <dom-child v-bind="$attrs" v-on="$listeners"></dom-child>
+    </div>
+  </template>
+  •
+  <script>
+  import DomChild from "./DomChild.vue";
+  export default {
+    props: ["foo"],
+    inheritAttrs: false,
+    components: {
+      DomChild,
+    },
+  };
+  </script>
+
+
+  <!-- 孙组件 -->
+  <template>
+    <div>
+      <p>bar:{{ bar }}</p>
+      <button @click="startUpFoo">我要更新foo</button>
+    </div>
+  </template>
+  •
+  <script>
+  export default {
+    props: ["bar"],
+    methods: {
+      startUpFoo() {
+        this.$emit("upFoo", "foooooooooooo");
+        console.log("startUpFoo");
+      },
+    },
+  };
+  </script>
+  ```
+
+#### Vue 中可以如何对一个组件进行扩展？(TODO -- 后续需要认真学习和总结-- 项目总结会涉及到)
+
+#### Vue2.x 和 Vue3 响应式上的区别
+
+  Vue 2.x 版本使用的是基于 Object.defineProperty 实现的响应式系统，而 Vue 3.x 版本使用的是基于 ES6 Proxy 对象实现的响应式系统，两者在实现上有很大的区别。
+
+  在 Vue 2.x 中，当一个对象被设置为响应式对象时，会通过 Object.defineProperty() 方法把每个属性都转换成 getter 和 setter，当属性值发生变化时，会触发 setter，进而通知所有引用该属性的组件更新视图。
+  而在 Vue 3.x 中，通过 ES6 Proxy 对象代理实现了对对象的监听和拦截，可以更加细粒度地控制对象属性的读取和赋值行为，也提供了更好的性能表现。
+  1. Vue 3.x 中对于新增属性和删除属性的响应式处理更加完善和高效，无需使用 Vue.set()方法，而 Vue 2.x 中需要手动使用这些方法才能保证新增或删除属性的响应式效果。
+  2. Vue 3.x 中使用了递归遍历 Proxy 对象的属性，因此在访问嵌套属性时会更加方便和高效，而 Vue 2.x 则需要通过 watch 或 computed 等方式才能实现嵌套属性的响应式。
+  3. Vue 3.x 中的响应式系统支持了 reactive() 和 readonly() 等 API，方便开发者创建只读或可变的响应式对象。而在 Vue 2.x 中则没有这些 API。
+
+  总的来说，Vue 3.x 中的响应式系统在使用上更加**方便、高效和完善**。
+
+  **Object.defineProperty 实现数据响应式的一些问题:**
+
+  + **只能劫持对象属性**
+    + 如果需要对整个对象进行劫持代理， 或者需要监听对象上的多个属性，则需要额外需要配合 Object.keys(obj) 进行遍历。
+    + 对象的层级不止一层，需要深度监听一个对象，则在上述的遍历操作下，还需要叠加递归处理的思想。因此，整个代码量和复杂度都是非常高的
+  + **无法监听数组变化** ：在 Vue2.x 中，通过重写 Array 原型上的方法解决了这些问题
+  + **初始化性能开销大**
+
+
+#### Vue 怎么用 vm.$set() 解决对象新增属性不能响应的问题 ？
+
+
+#### Vue 数据绑定是怎么实现的？
+
+  Vue的数据绑定机制是通过**数据劫持**和**发布/订阅模式**实现的。当数据发生变化时，会自动更新视图，并通过虚拟DOM对比算法来提高性能。这个机制可以有效地简化开发过程，提高代码的可维护性和可读性。
+
+  ##### Vue2的数据绑定
+
+  [![image.png](https://i.postimg.cc/d1NwfWVS/image.png)](https://postimg.cc/qhKPhxn8)
+
+  **简化版代码：**
+
+  ```js
+  // 响应式数据处理，构造一个响应式对象
+  class Observer {
+    constructor(data) {
+      this.data = data
+      this.walk(data)
+    }
+
+    // 遍历对象的每个 已定义 属性，分别执行 defineReactive
+    walk(data) {
+      if (!data || typeof data !== 'object') {
+        return
+      }
+
+      Object.keys(data).forEach(key => {
+        this.defineReactive(data, key, data[key])
+      })
+    }
+
+    // 为对象的每个属性重新设置 getter/setter
+    defineReactive(obj, key, val) {
+      // 每个属性都有单独的 dep 依赖管理
+      const dep = new Dep()
+
+      // 通过 defineProperty 进行操作代理定义
+      Object.defineProperty(obj, key, {
+        enumerable: true,
+        configurable: true,
+        // 值的读取操作，进行依赖收集
+        get() {
+          if (Dep.target) {
+            dep.depend()
+          }
+          return val
+        },
+        // 值的更新操作，触发依赖更新
+        set(newVal) {
+          if (newVal === val) {
+            return
+          }
+          val = newVal
+          dep.notify()
+        }
+      })
+    }
+  }
+
+  // 观察者的构造函数，接收一个表达式和回调函数
+  class Watcher {
+    constructor(vm, expOrFn, cb) {
+      this.vm = vm
+      this.getter = parsePath(expOrFn)
+      this.cb = cb
+      this.value = this.get()
+    }
+
+    // watcher 实例触发值读取时，将依赖收集的目标对象设置成自身，
+    // 通过 call 绑定当前 Vue 实例进行一次函数执行，在运行过程中收集函数中用到的数据
+    // 此时会在所有用到数据的 dep 依赖管理中插入该观察者实例
+    get() {
+      Dep.target = this
+      const value = this.getter.call(this.vm, this.vm)
+      // 函数执行完毕后将依赖收集目标清空，避免重复收集
+      Dep.target = null
+      return value
+    }
+
+    // dep 依赖更新时会调用，执行回调函数
+    update() {
+      const oldValue = this.value
+      this.value = this.get()
+      this.cb.call(this.vm, this.value, oldValue)
+    }
+  }
+
+  // 依赖收集管理者的构造函数
+  class Dep {
+    constructor() {
+      // 保存所有 watcher 观察者依赖数组
+      this.subs = []
+    }
+
+    // 插入一个观察者到依赖数组中
+    addSub(sub) {
+      this.subs.push(sub)
+    }
+
+    // 收集依赖，只有此时的依赖目标（watcher 实例）存在时才收集依赖
+    depend() {
+      if (Dep.target) {
+        this.addSub(Dep.target)
+      }
+    }
+  }
+
+  // 表达式解析
+  function parsePath(path) {
+    const segments = path.split('.')
+    return function (obj) {
+      for (let i = 0; i < segments.length; i++) {
+        if (!obj) {
+          return
+        }
+        obj = obj[segments[i]]
+      }
+      return obj
+    }
+  }
+  ```
+
+  **总结：**
+
+  + 上图所示：Vue主要是由 **```Compile```、```Observe```、```Watcher```** 来实现的，通过 Observer 来监听自己的 model 数据变化，通过 ```Compile``` 来解析编译模板指令，最终利用 ```Watcher``` 搭起 ```Observer``` 和 ```Compile``` 之间的通信桥梁，达到数据变化 -> 视图更新；视图交互变化(input) -> 数据model变更的双向绑定效果。
+
+  + Compile 的智慧
+    + 不是一次性渲染，而是生成 带数据绑定的函数
+    + 每个数据绑定对应一个 Watcher（精准更新）
+
+  + Observe 的陷阱
+    + 通过 getter/setter 制造"数据访问监控区"
+    + 只有被 Watcher 访问过的数据才会被追踪
+
+  **简略流程图：**
+  ```
+    [模板]                            [数据]                
+      │                                │
+      ▼                                ▼
+    Compile解析                        Observe劫持
+  （找到{{count}}）              （给count加getter/setter）
+      │                                │
+      ▼                                ▼
+    创建渲染函数                     数据访问触发getter
+      │                                │
+      ▼                                ▼
+  创建Watcher实例 ←───── 依赖收集 ←──── Dep.target
+  （带更新函数）          （双向记录）
+      │
+      ▼
+  数据变更触发setter
+      │
+      ▼
+  通知Watcher更新
+      │
+      ▼
+  执行更新函数
+  ```
+
+  ##### Vue3 的数据绑定
+
+  Vue3的响应式的实现，表层来说只是Object.defineProperty变成了Proxy代理方式的变换。从更细维度的角度来讲，Vue3 的响应式系统基于 Proxy 和 Reflect API 进行了全面重构。以下是主要的差别：
+
+  1. Proxy对象代理更简洁和高效，不需要递归遍历，每个属性进行```getter```和```Setter```重写，而且可以直接代理整个响应对象，就可以实现每个属性的监听。
+  ```js
+  // 创建响应式对象 reactive的基础实现
+  function reactive(obj) {
+    return new Proxy(obj, {
+      get(target, key, receiver) {
+        track(target, key) // 依赖收集
+        return Reflect.get(target, key, receiver)
+      },
+      set(target, key, value, receiver) {
+        const oldValue = target[key]
+        const result = Reflect.set(target, key, value, receiver)
+        if (oldValue !== value) {
+          trigger(target, key) // 触发更新
+        }
+        return result
+      },
+      // 其他拦截操作（deleteProperty/has等）
+    })
+  }
+  ```
+  2. 依赖收集的实现的不一样。Vue 3中的effect函数相当于Vue 2的Watcher，当响应式数据被访问时，effect会被收集，数据变化时触发effect重新执行。track和trigger函数。Track在get操作时记录依赖，trigger在set操作时触发更新。
+  ```js
+  // 依赖存储结构
+  const targetMap = new WeakMap() // target -> keyDepMap
+  const keyDepMap = new Map()     // key -> depSet
+  const depSet = new Set()        // 存储 effect
+
+  // 收集依赖
+  function track(target, key) {
+    if (activeEffect) {
+      let deps = targetMap.get(target)
+      if (!deps) targetMap.set(target, (deps = new Map()))
+      let dep = deps.get(key)
+      if (!dep) deps.set(key, (dep = new Set()))
+      dep.add(activeEffect)
+    }
+  }
+
+  // 触发更新
+  function trigger(target, key) {
+    const deps = targetMap.get(target)
+    if (!deps) return
+    const effects = deps.get(key)
+    effects && effects.forEach(effect => effect())
+  }
+  ```
+  Vue3依赖收集的全过程
+  ```js
+  import { reactive, effect } from 'vue'
+
+  // 1. 创建响应式对象
+  const state = reactive({ count: 0, name: 'Vue' })
+
+  // 2. 创建副作用函数（模拟组件渲染）
+  effect(() => {
+    console.log(`Count: ${state.count}`)
+  })
+
+  // 执行流程:
+  // a. effect执行 -> activeEffect = 当前effect
+  // b. 执行回调函数 -> 访问state.count
+  // c. 触发Proxy.get拦截器 -> 调用track(state, 'count')
+  // d. track将当前effect添加到count的依赖集合
+  //
+  // 依赖存储结构:
+  // targetMap: {
+  //   [state]: {
+  //     'count': [当前effect]
+  //   }
+  // }
+
+  // 3. 修改数据触发更新
+  state.count++ 
+
+  // 执行流程:
+  // a. 触发Proxy.set拦截器 -> 调用trigger(state, 'count')
+  // b. trigger查找count的所有依赖effect
+  // c. 执行这些effect（重新运行回调函数）
+  ```
+
+  3. Vue3比较Vue2上还存在性能优化、处理数组和对象的能力差异，以及内存管理方面的改进。
+  + 惰性代理 -- 只有被访问的属性才会被深度代理,避免初始化时递归整个对象树.
+  + 依赖分级 -- 1. 根据操作类型优化触发逻辑。2. 数组的 length 变化特殊处理
+  ```js
+  // 更新触发类型
+  export const enum TriggerOpTypes {
+    SET = 'set',
+    ADD = 'add',
+    DELETE = 'delete',
+    CLEAR = 'clear'
+  }
+  ```
+  + 批量更新 -- 使用微任务队列批量处理更新
+
+  参考 [Vue的依赖收集](https://ustbhuangyi.github.io/vue-analysis/v2/reactive/getters.html#dep)
+
+#### 聊聊 keep-alive 组件
+
+  在Vue中，keep-alive是一个抽象组件，它可以将其包裹的组件进行缓存，从而在切换组件时可以避免重复创建和销毁组件，提高页面性能和用户体验。
+
+  当一个组件被包裹在keep-alive中时，该组件会被缓存起来，而不是销毁。当这个组件再次被使用时，它会被从缓存中取出来并重新挂载到页面上。keep-alive提供了两个钩子函数：activated和 deactivated，用来在组件被激活或停用时执行一些逻辑，比如在组件被激活时执行一些数据初始化或者异步操作。
+
+#### Vue 如何进行依赖收集的?
+
+  虽然 Vue 2 与 Vue 3 实现响应式系统的方式不同，但是他们的核心思想还是一致的，都是通过 发布-订阅模式 来实现（因为发布者和观察者之间多了一个 dependence 依赖收集者，与传统观察者模式不同）。
+
+  **Vue2 中的依赖收集：**
+
+  1. 在Vue2中，依赖收集是通过```Object.defineProperty```对数据的get和set方法进行劫持实现的。
+  2. 当模板中使用到响应式数据时，Vue2会在编译阶段解析模板，将模板中所有的**数据访问表达式与对应的Watcher**建立联系。
+  3. Watcher对象负责将模板中的数据和视图进行关联，并且会在数据改变时触发更新。
+  4. 在初始化阶段，Vue2会为每个组件创建一个Watcher，并在组件渲染过程中进行依赖收集。
+  5. 在Watcher的get方法中，会将当前的Watcher对象（Dep.target）存储到被访问数据的依赖列表中（Dep）。
+  6. 当被访问的数据发生变化时，会触发setter方法，通过遍历依赖列表，通知每个依赖的Watcher执行更新操作。
+
+  **Vue3 中的依赖收集：**
+
+  1. 在Vue3中，依赖收集采用了Proxy代理对象的方式实现。
+  2. 每个组件实例都会有一个Reactive对象，通过Proxy对数据进行劫持，当访问或修改数据时会触发对应的get和set操作。
+  3. 在访问数据时，Vue3会通过Proxy捕获到访问操作，并将当前的Reactive对象和属性进行关联。
+  4. 当数据发生变化时，Proxy会触发对应的set操作，通过遍历相关的依赖列表来进行更新。
+  5. 与Vue2不同，Vue3采用了基于函数的响应式系统，将依赖收集与更新逻辑分离，避免了Watcher对象的创建和管理
+
+
+  **Vue 中的计算属性是如何收集依赖和进行更新的？**
+
+  Vue 的计算属性是一种便捷的属性，它的值是基于其他数据或计算属性衍生而来。Vue 能够自动追踪计算属性所依赖的数据以及对应的更新时机，这是通过依赖收集机制来实现的。
+
+  + **收集依赖：** 在组件渲染过程中，当计算属性被访问时，Vue会将当前正在执行的计算属性添加到一个依赖收集器中（Dep）。
+  + **触发依赖：** 同时，Vue 还会访问计算属性所依赖的其他数据（例如响应式数据或其他计算属性）。在访问这些数据的过程中，Vue 会将这些数据也添加到同一个依赖收集器中。
+  + **建立关联：** Vue 会建立起计算属性与所依赖数据之间的关联关系，使得当所依赖的数据发生改变时，计算属性能够被正确地更新。
+  + **派发更新：** 当所依赖的数据发生改变时，Vue 会通知依赖收集器中所关联的计算属性，将它们标记为需要重新计算。
+  + **重新计算：** 在下一次访问计算属性时，如果该计算属性被标记为需要重新计算，Vue 会重新调用计算属性的求值函数来计算新的值，并缓存起来。
+
+  **总结：**
+
+  尽管 Vue2 和 Vue3 的依赖收集机制有所差异，但它们都通过劫持数据的访问操作，建立数据与视图的联系。Vue2 使用Object.defineProperty 对数据进行劫持，通过 Watcher 对象进行依赖收集和更新；
+  而 Vue3 使用 Proxy 代理对象进行劫持，将数据与 Reactive 对象关联，并通过遍历依赖列表进行更新。Vue3 在性能和开发体验上做了一些优化，使得依赖收集更加高效和灵活。
+
+  ```
+  ***** 依赖收集的全过程 ******
+
+  初始化响应式数据
+        │
+        ˅
+  创建 Watcher（组件渲染/计算属性等）
+        │
+        ˅
+  设置 Dep.target = 当前 Watcher
+        │
+        ˅
+  执行渲染/计算（触发数据 getter）
+        │
+        ˅
+  getter 中通过 dep.depend() 收集依赖
+        │
+        ˅
+  将 Dep 存入 Watcher，同时将 Watcher 存入 Dep.subs
+        │
+        ˅
+  重置 Dep.target = null
+  ```
+
+#### 函数式组件
+
+
+
+#### 详解 Vue 单向数据流
+
+  **单向数据流：** 在 Vue 中，单向数据流是指数据在组件之间的传递是单向的，即从父组件传递给子组件。这种单向数据流的模式有助于提高代码的可维护性和可预测性。
+
+  **重要性：** 在父组件中，一个变量往往关联着多个变量或动作，如果子组件可以任意修改Prop对象，则父组件可能会出现未知的错误，并且无法预测其数据修改的来源的方式
+
+  **Vue 的单向数据流和双向数据绑定是否冲突？**
+
+  V-model和单项数据流并不冲突，所谓的单向数据流，指的是组件之间的数据流动。v-model 虽然是双向数据绑定，但是 v-model 只是一个语法糖， 本质上也是单向数据流，只是多了一层用户输入触发事件，更新数据的封装。
+
+#### 详解 Vue template 模板编译
 
 
 

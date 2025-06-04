@@ -1029,6 +1029,7 @@ for (let value of obj) {
   console.log(Reflect.ownKeys(objWithStrings));
   // ["100", "002", "c", "b", "001", Symbol(first), Symbol(second)]
   ```
+
 #### 什么是 JIT 优化（只是简单了解）
 
   **```just-in-time compilation```**，即时编译，本质上就是一种一边将代码编译成机器码，一边执行这些机器码的技术，特别适用于动态解释型语言(javascript)；
@@ -1038,6 +1039,8 @@ for (let value of obj) {
 #### async-await 是否会阻塞代码的执行
 
 **```async-await```** 在 JavaScript 中用于简化异步操作的处理，但它本身并不会阻塞代码执行,它允许以一种看似同步的方式编写异步代码，而实际上只是在特定函数的上下文中暂停执行，而不会阻塞整个程序的运行。总的来说，**```async-await```** 并不阻塞代码整体流程，而是借助 JS 的时间循环机制(微任务)，脱离当前函数，交出 cpu 控制权，执行函数后面的逻辑。
+
+#### 
 
 
 
