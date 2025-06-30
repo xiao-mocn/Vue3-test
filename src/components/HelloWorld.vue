@@ -25,7 +25,11 @@
   })
   function handleChange() {
   }
-
+  /**
+   * @param {character[][]} board
+   * @param {string} word
+   * @return {boolean}
+   */
   /**
    * 1. 二叉树
    * 2. 满二叉树

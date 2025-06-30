@@ -1,3 +1,5 @@
+### 常规手写题
+
 #### 防抖（Debounce）
 
 **核心思想：事件触发后延迟执行函数，若在延迟时间内再次触发，则重新计时**。
@@ -163,5 +165,34 @@ Function.prototype.newBind = function(context) {
 }
 ```
 
+### 实际面试题
+
+#### 实现一个 Left 函数
+
+```js
+怎么实现一个类似left函数
+function Left() {
+
+}
+Left('left 1').move('up').await(10).move('down')
+
+// 结果打印出来
+// left 1
+// up
+// ---- after 10s ----
+// 10s
+// down
+
+Left('left 2').move('up').awaitFast(10).move('down')
+
+// --- after 10s ----
+// left 2
+// up
+// down
+```
+
+
 #### 
+
+
 

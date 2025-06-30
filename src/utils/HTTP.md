@@ -5,13 +5,13 @@
   **HTTP Request Header:**
   + **Accept:** 浏览器能够处理的内容类型 (例如：```application/json, text/plain, */*```)
   + **Accept-Charset:** 浏览器能够显示的字符集 
-  + **Accept-Encoding：**浏览器能够处理的压缩编码 (例如：```gzip, deflate, br, zstd```)
-  + **Accept-Language：**浏览器当前设置的语言 (例如： ```zh-CN,zh;q=0.9```)
-  + **Connection：**浏览器与服务器之间连接的类型
-  + **Cookie：**当前页面设置的任何Cookie
-  + **Host：**发出请求的页面所在的域
-  + **Referer：**发出请求的页面的URL
-  + **User-Agent：**浏览器的用户代理字符串
+  + **Accept-Encoding：** 浏览器能够处理的压缩编码 (例如：```gzip, deflate, br, zstd```)
+  + **Accept-Language：** 浏览器当前设置的语言 (例如： ```zh-CN,zh;q=0.9```)
+  + **Connection：** 浏览器与服务器之间连接的类型
+  + **Cookie：** 当前页面设置的任何Cookie
+  + **Host：** 发出请求的页面所在的域
+  + **Referer：** 发出请求的页面的URL
+  + **User-Agent：** 浏览器的用户代理字符串
   [![image.png](https://i.postimg.cc/x1gsxyZh/image.png)](https://postimg.cc/CRBHdDSs)
 
   **HTTP Responses Header:**
@@ -498,7 +498,7 @@
   > 因为当服务端收到客户端的SYN连接请求报文后，可以直接发送SYN+ACK报文。其中ACK报文是用来应答的，SYN报文是用来同步的。但是关闭连接时，当服务端收到FIN报文时，很可能并不会立即关闭SOCKET，所以只能先回复一个ACK报文，告诉客户端，“你发的FIN报文我收到了”。只有等到我服务端所有的报文都发送完了，我才能发送FIN报文，因此不能一起发送，故需要四次挥手。
 
 
-#### WebSocket
+#### WebSocketb
 
   ##### 对 WebSocket 的理解
 
@@ -538,7 +538,6 @@
   2. 过多并发导致频繁切换产生性能问题： 一个线程对应一个http请求，那么如果并发数量巨大的话会导致线程频繁切换。而线程的上下文切换有时候并不是轻量级的资源，得不偿失。所以请求控制器里面会有一个连接池，以复用之前的链接。所以我们可以看作同域名下连接池可以存在 4 到 8 个连接，如果连接池全被使用，会阻塞后面请求任务，等待有空闲连接时执行后续任务。
   3. 避免同一客户端并发大量请求超过服务器的并发阈值，服务端通常会对同一个客户端来源设置并发阈值避免恶意攻击，如果浏览器不对同一域名并发限制可能会导致服务端的并发阈值被ban掉。
   4. 客户端的良知机制: 为了防止两个应用抢占资源时，强势一方无限制的获取资源导致弱势一方永远阻塞的状态。
-
 
 
 

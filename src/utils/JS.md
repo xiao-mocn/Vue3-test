@@ -664,7 +664,7 @@
 #### ESM 模块与 commonjs 模块方案有什么异同？
 
 + 语法：
-  + CommonJS 使用 require(<module-path>) 导入模块，并使用 module.exports 导出模块
+  + CommonJS 使用 ```require(<module-path>)``` 导入模块，并使用 ```module.exports``` 导出模块
   + ES Module 使用 import 导入模块，并使用 export 导出模块
 + 加载机制
   + CommonJS的加载机制是同步的，即：在加载和解析模块时，JavaScript 会停止代码的执行直到文件被加载完成。这对于服务器端的 Node.js 应用来说是可以接受的，因为文件都存储在本地硬盘，读取速度快。然而，对于运行在浏览器的代码，这将导致执行阻塞，降低性能。
@@ -1042,6 +1042,8 @@ for (let value of obj) {
 **```async-await```** 在 JavaScript 中用于简化异步操作的处理，但它本身并不会阻塞代码执行,它允许以一种看似同步的方式编写异步代码，而实际上只是在特定函数的上下文中暂停执行，而不会阻塞整个程序的运行。总的来说，**```async-await```** 并不阻塞代码整体流程，而是借助 JS 的时间循环机制(微任务)，脱离当前函数，交出 cpu 控制权，执行函数后面的逻辑。
 
 #### 
+
+
 
 
 
